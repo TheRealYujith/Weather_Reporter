@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { fetchWeather } from '../lib/fetchWeather';
 
 export default function HomePage() {
   const [weather, setWeather] = useState<any>(null);
@@ -14,7 +13,16 @@ export default function HomePage() {
       setLoading(true);
       setError('');
       try {
-        const data = await fetchWeather(city);
+        const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
+        const res = await fetch(
+          `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${city}&aqi=yes`
+        );
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch weather');
+        }
+
+        const data = await res.json();
         setWeather(data);
       } catch (err: any) {
         setError(err.message);
@@ -26,30 +34,39 @@ export default function HomePage() {
   }, [city]);
 
   return (
-    <main className="p-4 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">🌤️ Weather in {city}</h1>
+    <main className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-300 text-gray-900 flex items-center justify-center p-4">
+      <div className="bg-white/80 backdrop-blur-lg shadow-xl rounded-2xl p-8 max-w-md w-full space-y-6">
+        <h1 className="text-3xl font-bold text-center">🌤️ Weather App</h1>
 
-      <input
-        type="text"
-        value={city}
-        onChange={(e) => setCity(e.target.value)}
-        className="p-2 border border-gray-300 mb-4 w-full rounded"
-        placeholder="Enter city name"
-      />
+        <input
+          type="text"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+          placeholder="Enter city name"
+        />
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+        {loading && <p className="text-center text-blue-600">Loading...</p>}
+        {error && <p className="text-center text-red-600">{error}</p>}
 
-      {weather && !loading && (
-        <div className="bg-white p-4 rounded shadow space-y-2">
-          <p>🌡️ Temperature: {weather.current.temp_c}°C</p>
-          <p>💧 Humidity: {weather.current.humidity}%</p>
-          <p>💨 Wind Speed: {weather.current.wind_kph} km/h</p>
-          <p>🌞 UV Index: {weather.current.uv}</p>
-          <img src={weather.current.condition.icon} alt="weather icon" />
-          <p>{weather.current.condition.text}</p>
-        </div>
-      )}
+        {weather && !loading && (
+          <div className="bg-white rounded-xl shadow-md p-5 text-center space-y-3 animate-fade-in">
+            <h2 className="text-xl font-semibold">{weather.location.name}</h2>
+            <img
+              src={weather.current.condition.icon}
+              alt={weather.current.condition.text}
+              className="mx-auto"
+            />
+            <p className="text-lg">{weather.current.condition.text}</p>
+            <div className="grid grid-cols-2 gap-4 text-sm text-left">
+              <p>🌡️ Temp: <span className="font-medium">{weather.current.temp_c}°C</span></p>
+              <p>💧 Humidity: <span className="font-medium">{weather.current.humidity}%</span></p>
+              <p>💨 Wind: <span className="font-medium">{weather.current.wind_kph} km/h</span></p>
+              <p>🌞 UV Index: <span className="font-medium">{weather.current.uv}</span></p>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
